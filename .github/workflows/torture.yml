@@ -17,8 +17,8 @@ jobs:
         run: |
             pushd /tmp
             mkdir /tmp/assets
-            wget -q https://github.com/sbt/sbt/releases/download/v1.5.2/sbt-1.5.2.zip
-            unzip sbt-1.5.2.zip
+            wget -q https://github.com/sbt/sbt/releases/download/v1.7.1/sbt-1.7.1.zip
+            unzip sbt-1.7.1.zip
             cp `find . -name sbt-launch.jar` /tmp/assets
             rm -rf sbt/
             rm sbt-1.5.2.zip
