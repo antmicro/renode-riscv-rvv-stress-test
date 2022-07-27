@@ -21,7 +21,7 @@ jobs:
             unzip sbt-1.7.1.zip
             cp `find . -name sbt-launch.jar` /tmp/assets
             rm -rf sbt/
-            rm sbt-1.5.2.zip
+            rm sbt-1.7.1.zip
             popd
 
       - name: Download Renode
