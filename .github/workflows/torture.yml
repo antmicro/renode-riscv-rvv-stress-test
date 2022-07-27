@@ -1,0 +1,92 @@
+name: Run torture
+
+on: [push, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Install prerequisites
+        run: |
+            sudo apt update
+            sudo apt install -y icdiff device-tree-compiler
+
+      - name: Get SBT launch
+        run: |
+            pushd /tmp
+            mkdir /tmp/assets
+            wget -q https://github.com/sbt/sbt/releases/download/v1.5.2/sbt-1.5.2.zip
+            unzip sbt-1.5.2.zip
+            cp `find . -name sbt-launch.jar` /tmp/assets
+            rm -rf sbt/
+            rm sbt-1.5.2.zip
+            popd
+
+      - name: Download Renode
+        run: |
+            pushd /tmp
+            mkdir /tmp/renode
+            wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
+            cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
+            export PATH=/tmp/renode:$PATH
+            popd
+
+      - name: Build SPIKE
+        run: |
+            pushd /tmp
+            git clone https://github.com/riscv/riscv-isa-sim.git
+            cd riscv-isa-sim
+            mkdir build
+            cd build
+            ../configure --prefix=/tmp/spike
+            make
+            make install
+            export PATH=/tmp/spike/bin:$PATH
+
+      - name: Configure the toolchain
+        shell: bash
+        env:
+            TOOLCHAIN_PATH: ${{ secrets.TOOLCHAINPATH }}
+        run: |
+            pushd /tmp
+            wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
+            tar -xf toolchain_iree_rv32.tar.gz
+            export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
+            popd
+
+      - name: Prepare the torture binary 
+        run: |
+            git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch 32bit_opcodes_support
+            pushd riscv-torture
+            cp /tmp/assets/sbt-launch.jar ./
+            make CONFIG=../rvv_tests/vectors_32bit.config
+            make CONFIG=../rvv_tests/vectors_32bit.config igentest
+            riscv32-unknown-elf-objdump -S output/test > output/test.dump
+            popd
+
+      - name: Compare
+        run: |
+            pushd riscv-torture/output
+            cp ../../rvv_tests/torture.resc .
+            renode --disable-xwt torture.resc
+            
+            cp /tmp/test.renode.sig .
+            
+            icdiff --cols 75 test.renode.sig test.spike.sig
+            cmp -s test.renode.sig test.spike.sig
+            popd
+      
+      - name: Archive results
+        uses: actions/upload-artifact@v2
+        with:
+          name: results
+          path: |
+            riscv-torture/output/test.spike.sig
+            riscv-torture/output/test.renode.sig
+            riscv-torture/output/test
+            riscv-torture/output/test.S
+            riscv-torture/output/test.dump
+            riscv-torture/output/renode.log
+            
