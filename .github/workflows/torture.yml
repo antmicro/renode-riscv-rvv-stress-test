@@ -62,6 +62,7 @@ jobs:
             pushd riscv-torture
             cp /tmp/assets/sbt-launch.jar ./
             java --version
+            export JAVA_HOME=$(/usr/libexec/java_home)
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config"
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config" igentest
             riscv32-unknown-elf-objdump -S output/test > output/test.dump
