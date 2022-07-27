@@ -1,0 +1,98 @@
+name: Run stress test
+
+on: [push, workflow_dispatch]
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '8'
+
+      - name: Install prerequisites
+        run: |
+            sudo apt update
+            sudo apt install -y icdiff device-tree-compiler
+
+      - name: Get SBT launch
+        run: |
+            pushd /tmp
+            mkdir /tmp/assets
+            wget -q https://github.com/sbt/sbt/releases/download/v1.7.1/sbt-1.7.1.zip
+            unzip sbt-1.7.1.zip
+            cp `find . -name sbt-launch.jar` /tmp/assets
+            rm -rf sbt/
+            rm sbt-1.7.1.zip
+            popd
+
+      - name: Download Renode
+        run: |
+            pushd /tmp
+            mkdir /tmp/renode
+            wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
+            cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
+            popd
+
+      - name: Build SPIKE
+        run: |
+            pushd /tmp
+            git clone https://github.com/riscv/riscv-isa-sim.git
+            cd riscv-isa-sim
+            mkdir build
+            cd build
+            ../configure --prefix=/tmp/spike
+            make
+            make install
+
+      - name: Configure the toolchain
+        shell: bash
+        env:
+            TOOLCHAIN_PATH: ${{ secrets.TOOLCHAINPATH }}
+        run: |
+            pushd /tmp
+            wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
+            tar -xf toolchain_iree_rv32.tar.gz
+            popd
+
+      - name: Prepare test binary
+        run: |
+            export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
+            export PATH=/tmp/spike/bin:$PATH
+            git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch dev
+            pushd riscv-torture
+            cp /tmp/assets/sbt-launch.jar ./
+            make CONFIG="$PWD/../rvv_tests/vectors_32bit.config"
+            make CONFIG="$PWD/../rvv_tests/vectors_32bit.config" igentest
+            riscv32-unknown-elf-objdump -S output/test > output/test.dump
+            mkdir -p ../riscv-stress-test/
+            cp -r output ../riscv-stress-test/
+            popd
+
+      - name: Compare
+        run: |
+            export PATH=/tmp/renode:$PATH
+            pushd riscv-stress-test/output
+            cp ../../rvv_tests/stress_test.resc .
+            renode --disable-xwt stress_test.resc
+
+            cp /tmp/test.renode.sig .
+
+            icdiff --cols 75 test.renode.sig test.spike.sig
+            cmp -s test.renode.sig test.spike.sig
+            popd
+
+      - name: Archive results
+        uses: actions/upload-artifact@v2
+        with:
+          name: results
+          path: |
+            riscv-stress-test/output/test.spike.sig
+            riscv-stress-test/output/test.renode.sig
+            riscv-stress-test/output/test
+            riscv-stress-test/output/test.S
+            riscv-stress-test/output/test.dump
+            riscv-stress-test/output/renode.log
+
