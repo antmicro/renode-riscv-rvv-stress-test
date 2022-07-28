@@ -57,8 +57,8 @@ jobs:
             pushd /tmp
             wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
             tar -xf toolchain_iree_rv32.tar.gz
-            pwd
-            ls -lR
+            # pwd
+            # ls -lR
             export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
             popd
 
