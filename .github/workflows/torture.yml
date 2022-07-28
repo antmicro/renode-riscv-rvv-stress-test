@@ -65,8 +65,8 @@ jobs:
             git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch 32bit_opcodes_support
             pushd riscv-torture
             cp /tmp/assets/sbt-launch.jar ./
-            java --version
-            export JAVA_HOME=$(/usr/libexec/java_home)
+            # java --version
+            # export JAVA_HOME=$(/usr/libexec/java_home)
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config"
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config" igentest
             riscv32-unknown-elf-objdump -S output/test > output/test.dump
