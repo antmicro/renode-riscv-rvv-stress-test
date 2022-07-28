@@ -28,45 +28,43 @@ jobs:
             rm sbt-1.7.1.zip
             popd
 
-      # - name: Download Renode
-      #   run: |
-      #       pushd /tmp
-      #       mkdir /tmp/renode
-      #       wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
-      #       cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
-      #       export PATH=/tmp/renode:$PATH
-      #       popd
+      - name: Download Renode
+        run: |
+            pushd /tmp
+            mkdir /tmp/renode
+            wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
+            cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
+            export PATH=/tmp/renode:$PATH
+            popd
 
-      # - name: Build SPIKE
-      #   run: |
-      #       pushd /tmp
-      #       git clone https://github.com/riscv/riscv-isa-sim.git
-      #       cd riscv-isa-sim
-      #       mkdir build
-      #       cd build
-      #       ../configure --prefix=/tmp/spike
-      #       make
-      #       make install
-      #       export PATH=/tmp/spike/bin:$PATH
+      - name: Build SPIKE
+        run: |
+            pushd /tmp
+            git clone https://github.com/riscv/riscv-isa-sim.git
+            cd riscv-isa-sim
+            mkdir build
+            cd build
+            ../configure --prefix=/tmp/spike
+            make
+            make install
+            export PATH=/tmp/spike/bin:$PATH
 
-      # - name: Configure the toolchain
-      #   shell: bash
-      #   env:
-      #       TOOLCHAIN_PATH: ${{ secrets.TOOLCHAINPATH }}
-      #   run: |
-      #       pushd /tmp
-      #       wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
-      #       tar -xf toolchain_iree_rv32.tar.gz
-      #       export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
-      #       popd
+      - name: Configure the toolchain
+        shell: bash
+        env:
+            TOOLCHAIN_PATH: ${{ secrets.TOOLCHAINPATH }}
+        run: |
+            pushd /tmp
+            wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
+            tar -xf toolchain_iree_rv32.tar.gz
+            export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
+            popd
 
       - name: Prepare the torture binary 
         run: |
             git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch 32bit_opcodes_support
             pushd riscv-torture
             cp /tmp/assets/sbt-launch.jar ./
-            # java --version
-            # export JAVA_HOME=$(/usr/libexec/java_home)
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config"
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config" igentest
             riscv32-unknown-elf-objdump -S output/test > output/test.dump
