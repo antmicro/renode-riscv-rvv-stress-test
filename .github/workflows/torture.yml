@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '8'
 
       - name: Install prerequisites
         run: |
@@ -24,14 +27,14 @@ jobs:
             rm sbt-1.7.1.zip
             popd
 
-      - name: Download Renode
-        run: |
-            pushd /tmp
-            mkdir /tmp/renode
-            wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
-            cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
-            export PATH=/tmp/renode:$PATH
-            popd
+      # - name: Download Renode
+      #   run: |
+      #       pushd /tmp
+      #       mkdir /tmp/renode
+      #       wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
+      #       cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
+      #       export PATH=/tmp/renode:$PATH
+      #       popd
 
       # - name: Build SPIKE
       #   run: |
@@ -45,16 +48,16 @@ jobs:
       #       make install
       #       export PATH=/tmp/spike/bin:$PATH
 
-      - name: Configure the toolchain
-        shell: bash
-        env:
-            TOOLCHAIN_PATH: ${{ secrets.TOOLCHAINPATH }}
-        run: |
-            pushd /tmp
-            wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
-            tar -xf toolchain_iree_rv32.tar.gz
-            export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
-            popd
+      # - name: Configure the toolchain
+      #   shell: bash
+      #   env:
+      #       TOOLCHAIN_PATH: ${{ secrets.TOOLCHAINPATH }}
+      #   run: |
+      #       pushd /tmp
+      #       wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
+      #       tar -xf toolchain_iree_rv32.tar.gz
+      #       export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
+      #       popd
 
       - name: Prepare the torture binary 
         run: |
