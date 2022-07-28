@@ -34,20 +34,18 @@ jobs:
             mkdir /tmp/renode
             wget -q https://builds.renode.io/renode-latest.linux-portable.tar.gz
             cat renode-latest.linux-portable.tar.gz | tar xz --strip-components=1 -C /tmp/renode
-            export PATH=/tmp/renode:$PATH
             popd
 
-      # - name: Build SPIKE
-      #   run: |
-      #       pushd /tmp
-      #       git clone https://github.com/riscv/riscv-isa-sim.git
-      #       cd riscv-isa-sim
-      #       mkdir build
-      #       cd build
-      #       ../configure --prefix=/tmp/spike
-      #       make
-      #       make install
-      #       export PATH=/tmp/spike/bin:$PATH
+      - name: Build SPIKE
+        run: |
+            pushd /tmp
+            git clone https://github.com/riscv/riscv-isa-sim.git
+            cd riscv-isa-sim
+            mkdir build
+            cd build
+            ../configure --prefix=/tmp/spike
+            make
+            make install
 
       - name: Configure the toolchain
         shell: bash
@@ -57,14 +55,12 @@ jobs:
             pushd /tmp
             wget -q ${TOOLCHAIN_PATH}/toolchain_iree_rv32.tar.gz 2>&1 1>/dev/null
             tar -xf toolchain_iree_rv32.tar.gz
-            # pwd
-            # ls -lR
-            export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
             popd
 
       - name: Prepare the torture binary 
         run: |
             export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
+            export PATH=/tmp/spike/bin:$PATH
             git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch 32bit_opcodes_support
             pushd riscv-torture
             cp /tmp/assets/sbt-launch.jar ./
@@ -75,6 +71,7 @@ jobs:
 
       - name: Compare
         run: |
+            export PATH=/tmp/renode:$PATH
             pushd riscv-torture/output
             cp ../../rvv_tests/torture.resc .
             renode --disable-xwt torture.resc
