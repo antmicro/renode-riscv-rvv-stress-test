@@ -3,8 +3,8 @@ mach create "torture"
 
 machine LoadPlatformDescriptionFromString
 """
-cpu: CPU.RiscV64 @ sysbus
-    cpuType: "rv64gcv"
+cpu: CPU.RiscV32 @ sysbus
+    cpuType: "rv32gcv"
     privilegeArchitecture: PrivilegeArchitecture.Priv1_10
     timeProvider: empty
 
