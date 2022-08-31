@@ -61,7 +61,7 @@ jobs:
         run: |
             export PATH=/tmp/toolchain_iree_rv32imf/bin:$PATH
             export PATH=/tmp/spike/bin:$PATH
-            git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch 32bit_opcodes_support
+            git clone --recurse-submodules https://github.com/antmicro/riscv-torture.git --branch dev
             pushd riscv-torture
             cp /tmp/assets/sbt-launch.jar ./
             make CONFIG="$PWD/../rvv_tests/vectors_32bit.config"
