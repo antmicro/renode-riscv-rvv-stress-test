@@ -14,46 +14,46 @@ dram: Memory.MappedMemory @ sysbus 0x80000000
 
 sysbus LoadELF $ORIGIN/test
 
-cpu AddHook `sysbus GetSymbolAddress "test_end"`
+set torture_end_hook_py 
 """
 time.sleep(1)
 start_addr = cpu.Bus.GetSymbolAddress("begin_signature")
 end_addr = cpu.Bus.GetSymbolAddress("end_signature")
 
 with open("/tmp/test.renode.sig", "w") as f:
-    curr_addr = start_addr
-    while curr_addr < end_addr:
-      s = ""
-      for j in range(16, 0, -1):
-        s += "%02x" % cpu.Bus.ReadByte(curr_addr+j-1)
-      curr_addr += 16
-      f.write(s + "\n")
-      cpu.Log(LogLevel.Info,"SIG> " + s) 
+  curr_addr = start_addr
+  while curr_addr < end_addr:
+    s = ""
+    for j in range(16, 0, -1):
+      s += "%02x" % cpu.Bus.ReadByte(curr_addr+j-1)
+    curr_addr += 16
+    f.write(s + "\n")
+    cpu.Log(LogLevel.Info, "SIG> " + s)
+
+countedOpcodes = cpu.GetAllOpcodesCounters()
+missedCount = 0
+opcodesCount = countedOpcodes.GetLength(0) - 1
+for i in range(1, 1+opcodesCount):
+  opcode = countedOpcodes[i, 0]
+  count = int(countedOpcodes[i, 1])
+  if count == 0:
+    cpu.Log(LogLevel.Warning, 'Missed opcode: ' + opcode)
+    missedCount += 1
+
+if missedCount != 0:
+  log = 'Executed binary doesn\'t contain {0} ({1:.1%}) of {2} vector instructions'.format(
+    missedCount, 1.0*missedCount/opcodesCount, opcodesCount)
+  cpu.Log(LogLevel.Warning, log)
 
 emulationManager.CurrentEmulation.AddOrUpdateInBag('status', 'finished')
 """
 
-cpu AddHook `sysbus GetSymbolAddress "write_tohost"`
-"""
-time.sleep(1)
-start_addr = cpu.Bus.GetSymbolAddress("begin_signature")
-end_addr = cpu.Bus.GetSymbolAddress("end_signature")
-
-with open("/tmp/test.renode.sig", "w") as f:
-    curr_addr = start_addr
-    while curr_addr < end_addr:
-      s = ""
-      for j in range(16, 0, -1):
-        s += "%02x" % cpu.Bus.ReadByte(curr_addr+j-1)
-      curr_addr += 16
-      f.write(s + "\n")
-      cpu.Log(LogLevel.Info, "SIG> " + s) 
-
-emulationManager.CurrentEmulation.AddOrUpdateInBag('status', 'finished')
-"""
+cpu AddHook `sysbus GetSymbolAddress "test_end"` $torture_end_hook_py
+cpu AddHook `sysbus GetSymbolAddress "write_tohost"` $torture_end_hook_py
 
 cpu LogFunctionNames true
 cpu MaximumBlockSize 1
+cpu EnableVectorOpcodesCounting
 logLevel -1
 logFile $ORIGIN/renode.log
 logLevel 2 console
