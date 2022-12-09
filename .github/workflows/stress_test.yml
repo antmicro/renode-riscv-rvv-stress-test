@@ -1,6 +1,10 @@
 name: Run stress test
 
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 23 * * *' # run daily at 23:00 (UTC)
 
 jobs:
   test:
