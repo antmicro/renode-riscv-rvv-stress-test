@@ -50,6 +50,9 @@ emulationManager.CurrentEmulation.AddOrUpdateInBag('status', 'finished')
 
 cpu AddHook `sysbus GetSymbolAddress "test_end"` $end_hook_py
 cpu AddHook `sysbus GetSymbolAddress "write_tohost"` $end_hook_py
+cpu AddHook `sysbus GetSymbolAddress "handle_exception"` """
+cpu.Log(LogLevel.Error, 'Test binary reached the handle_exception symbol (mcause = {0}).'.format(cpu.MCAUSE))
+"""
 
 cpu LogFunctionNames true
 cpu MaximumBlockSize 1
